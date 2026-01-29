@@ -27,142 +27,200 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public TotalWorkHourEntity calculateTotalWork(Long employeeId, LocalDate date) {
 
-        System.out.println("=== AttendanceServiceImpl Debug ===");
-        System.out.println("EmployeeId: " + employeeId);
-        System.out.println("Date: " + date);
-
+        // Gün aralığı
         LocalDateTime dayStart = date.atStartOfDay();
-        LocalDateTime dayEnd = date.atTime(LocalTime.MAX);
+        LocalDateTime dayEndExclusive = date.plusDays(1).atStartOfDay(); // [dayStart, nextDayStart)
 
-        // 1️⃣ Logs alma
-        System.out.println("Fetching biometric logs...");
-        List<BiometricLogEntity> logs =
-                biometricLogRepository.findByEmployeeIdAndDateTimeBetween(employeeId, dayStart, dayEnd);
-        System.out.println("Logs count: " + logs.size());
+        // 1) Logları çəkdim və sort etdim
+        List<BiometricLogEntity> logs = biometricLogRepository
+                .findByEmployeeIdAndDateTimeBetween(employeeId, dayStart, dayEndExclusive.minusNanos(1));
 
         if (logs.isEmpty()) {
             throw new RuntimeException("No biometric logs for this date");
         }
 
-        // 2️⃣ first IN / last OUT
-        LocalDateTime firstIn = logs.stream()
-                .filter(l -> l.getInOut() == InOutType.IN)
-                .map(BiometricLogEntity::getDateTime)
-                .min(Comparator.naturalOrder())
-                .orElse(null);
+        logs.sort(Comparator.comparing(BiometricLogEntity::getDateTime));
 
-        LocalDateTime lastOut = logs.stream()
-                .filter(l -> l.getInOut() == InOutType.OUT)
-                .map(BiometricLogEntity::getDateTime)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
-
-        System.out.println("First IN: " + firstIn);
-        System.out.println("Last OUT: " + lastOut);
-
-        if (firstIn == null || lastOut == null) {
-            throw new RuntimeException("Invalid IN/OUT logs");
-        }
-
-        // 3️⃣ Shift alma
-        System.out.println("Fetching employee shift via Feign...");
+        // 2) Shift-i götür  modullara bolduyum ucun feign client ile etdim
         WorkShiftDto shift = employeeClient.getEmployeeShift(employeeId);
-        System.out.println("Shift received: " + shift);
-
         if (shift == null || shift.getStartTime() == null || shift.getEndTime() == null) {
             throw new RuntimeException("Employee shift not found or invalid");
         }
 
         LocalDateTime shiftStart = LocalDateTime.of(date, shift.getStartTime());
         LocalDateTime shiftEnd = LocalDateTime.of(date, shift.getEndTime());
-        System.out.println("Shift start: " + shiftStart + ", Shift end: " + shiftEnd);
 
-        // 4️⃣ Actual start/end
-        LocalDateTime actualStart = firstIn.isAfter(shiftStart) ? firstIn : shiftStart;
-        LocalDateTime actualEnd = lastOut.isBefore(shiftEnd) ? lastOut : shiftEnd;
-        System.out.println("Actual work start: " + actualStart + ", Actual work end: " + actualEnd);
-
-        // 5️⃣ Total minutes
-        long totalMinutes = Duration.between(actualStart, actualEnd).toMinutes();
-        System.out.println("Total work minutes: " + totalMinutes);
-
-        TotalWorkHourEntity entity = TotalWorkHourEntity.builder()
-                .employeeId(employeeId)
-                .workDate(date)
-                .workStartDate(shiftStart)
-                .workEndDate(shiftEnd)
-                .firstIn(firstIn)
-                .lastOut(lastOut)
-                .totalWorkMinutes(totalMinutes)
-                .build();
-
-        System.out.println("Saving total work hour entity...");
-        TotalWorkHourEntity saved = totalWorkHourRepository.save(entity);
-        System.out.println("Saved entity ID: " + saved.getId());
-
-        System.out.println("=== End Debug ===");
-        return saved;
-    }
-    @Override
-    public AttendanceStatusDto getAttendanceStatus(Long employeeId, LocalDate date) {
-
-        // 1️⃣ Günün başlanğıcı və sonu
-        LocalDateTime dayStart = date.atStartOfDay();
-        LocalDateTime dayEnd = date.atTime(LocalTime.MAX);
-
-        // 2️⃣ Gəlmə/çıxma loglarını çəkmək
-        List<BiometricLogEntity> logs = biometricLogRepository
-                .findByEmployeeIdAndDateTimeBetween(employeeId, dayStart, dayEnd);
-
-        if (logs.isEmpty()) {
-            throw new RuntimeException("No logs found for this employee on this date");
+        //  gece smeni olsa  endi  bir  gun artiqmaq ? mellimden sorus bunu
+        if (!shiftEnd.isAfter(shiftStart)) {
+            shiftEnd = shiftEnd.plusDays(1);
         }
 
-        // 3️⃣ İlk giriş və son çıxış
+        // 3) First IN / Last OUT
         LocalDateTime firstIn = logs.stream()
                 .filter(l -> l.getInOut() == InOutType.IN)
                 .map(BiometricLogEntity::getDateTime)
                 .min(Comparator.naturalOrder())
-                .orElseThrow(() -> new RuntimeException("No IN log found"));
+                .orElse(null);
 
         LocalDateTime lastOut = logs.stream()
                 .filter(l -> l.getInOut() == InOutType.OUT)
                 .map(BiometricLogEntity::getDateTime)
                 .max(Comparator.naturalOrder())
-                .orElseThrow(() -> new RuntimeException("No OUT log found"));
+                .orElse(null);
 
-        // 4️⃣ İşçinin smenini Employee service-dən çəkmək
+        if (firstIn == null) {
+            throw new RuntimeException("No IN log found for this date");
+        }
+
+        // 4) Total work: IN/OUT cütləmə ilə hesablamaq  butun variantlari mellimle dusunmeliyem
+        long totalMinutes = calculateWorkedMinutesByPairs(logs, shiftEnd);
+
+        // 5) Upsert: həmin gün üçün əvvəl yazılıbsa update et
+        TotalWorkHourEntity entity = totalWorkHourRepository
+                .findByEmployeeIdAndWorkDate(employeeId, date)
+                .orElseGet(TotalWorkHourEntity::new);
+
+        entity.setEmployeeId(employeeId);
+        entity.setWorkDate(date);
+        entity.setWorkStartDate(shiftStart);
+        entity.setWorkEndDate(shiftEnd);
+        entity.setFirstIn(firstIn);
+        entity.setLastOut(lastOut); // null ola bilər (əgər OUT yoxdursa)
+        entity.setTotalWorkMinutes(totalMinutes);
+
+        return totalWorkHourRepository.save(entity);
+    }
+
+    /**
+     * IN/OUT cütləmə:
+     * - IN görsə, "openIn" açır
+     * - OUT görsə və openIn varsa, intervalı toplayır
+     * - Əgər günün sonunda openIn qalarsa (OUT yoxdursa), end olaraq shiftEnd istifadə edir
+     * <p>
+     * Qeyd: Bu variant 8-də gəlibsə, 9-a qədər olan vaxtı DA sayır (overtime/early arrival).
+     */
+    private long calculateWorkedMinutesByPairs(List<BiometricLogEntity> logs, LocalDateTime fallbackEnd) {
+
+        LocalDateTime openIn = null;
+        long total = 0;
+
+        for (BiometricLogEntity log : logs) {
+            LocalDateTime t = log.getDateTime();
+
+            if (log.getInOut() == InOutType.IN) {
+                // ard-arda IN gəlirsə, ən birincisini saxlayırıq
+                if (openIn == null) {
+                    openIn = t;
+                }
+            } else if (log.getInOut() == InOutType.OUT) {
+                // OUT gəlib, amma əvvəl IN yoxdursa, ignore
+                if (openIn != null) {
+                    if (t.isAfter(openIn)) {
+                        total += Duration.between(openIn, t).toMinutes();
+                    }
+                    openIn = null; // session bağlandı
+                }
+            }
+        }
+
+        // Gün OUT ilə bağlanmayıbsa (axırda IN qalıbsa)
+        if (openIn != null) {
+            LocalDateTime end = (fallbackEnd != null && fallbackEnd.isAfter(openIn)) ? fallbackEnd : openIn;
+            total += Duration.between(openIn, end).toMinutes();
+        }
+
+        // mənfi çıxmasın
+        return Math.max(0, total);
+    }
+
+    @Override
+    public AttendanceStatusDto getAttendanceStatus(Long employeeId, LocalDate date) {
+
+        TotalWorkHourEntity totalEntity = totalWorkHourRepository
+                .findByEmployeeIdAndWorkDate(employeeId, date)
+                .orElseThrow(() ->
+                        new RuntimeException("Total work not calculated for this employee and date")
+                );
+
+        // 2Loglar yalnız status (firstIn/lastOut, adjustments) üçündür
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEndExclusive = date.plusDays(1).atStartOfDay();
+
+        List<BiometricLogEntity> logs = biometricLogRepository
+                .findByEmployeeIdAndDateTimeBetween(
+                        employeeId,
+                        dayStart,
+                        dayEndExclusive.minusNanos(1)
+                );
+
+        if (logs.isEmpty()) {
+            // total var, amma loglar silinibsə – yenə də total qaytaracagiq
+            return AttendanceStatusDto.builder()
+                    .firstIn(totalEntity.getFirstIn())
+                    .lastOut(totalEntity.getLastOut())
+                    .totalWorkedMinutes(
+                            totalEntity.getTotalWorkMinutes() != null
+                                    ? totalEntity.getTotalWorkMinutes()
+                                    : 0
+                    )
+                    .build();
+        }
+
+        logs.sort(Comparator.comparing(BiometricLogEntity::getDateTime));
+
+        LocalDateTime firstIn = logs.stream()
+                .filter(l -> l.getInOut() == InOutType.IN)
+                .map(BiometricLogEntity::getDateTime)
+                .min(Comparator.naturalOrder())
+                .orElse(totalEntity.getFirstIn());
+
+        LocalDateTime lastOut = logs.stream()
+                .filter(l -> l.getInOut() == InOutType.OUT)
+                .map(BiometricLogEntity::getDateTime)
+                .max(Comparator.naturalOrder())
+                .orElse(totalEntity.getLastOut());
+
+        // 3Shift yalnız adjustments üçün lazımdır
         WorkShiftDto shift = employeeClient.getEmployeeShift(employeeId);
+        if (shift == null || shift.getStartTime() == null || shift.getEndTime() == null) {
+            throw new RuntimeException("Employee shift not found or invalid");
+        }
+
         LocalDateTime shiftStart = LocalDateTime.of(date, shift.getStartTime());
         LocalDateTime shiftEnd = LocalDateTime.of(date, shift.getEndTime());
 
-        // 5️⃣ Faktiki iş saatı (shift ilə məhdudlaşdırılmış)
-        LocalDateTime actualStart = firstIn.isAfter(shiftStart) ? firstIn : shiftStart;
-        LocalDateTime actualEnd = lastOut.isBefore(shiftEnd) ? lastOut : shiftEnd;
-        long totalWorkedMinutes = Duration.between(actualStart, actualEnd).toMinutes();
+        // gece smeni olarsa
+        if (!shiftEnd.isAfter(shiftStart)) {
+            shiftEnd = shiftEnd.plusDays(1);
+        }
 
-        // 6️⃣ DTO yaratmaq (builder pattern ilə)
+        //  DTO — total artıq DB-dəndir, burada HESABLANMIR
         AttendanceStatusDto dto = AttendanceStatusDto.builder()
                 .firstIn(firstIn)
                 .lastOut(lastOut)
-                .totalWorkedMinutes(totalWorkedMinutes)
+                .totalWorkedMinutes(
+                        totalEntity.getTotalWorkMinutes() != null
+                                ? totalEntity.getTotalWorkMinutes()
+                                : 0
+                )
                 .build();
 
-        // 🔹 Gecikmə (Late Arrival)
-        long lateMinutes = Duration.between(shiftStart, firstIn).toMinutes();
-        if (lateMinutes > 0) dto.addAdjustment("lateMinutes", lateMinutes);
+        // Adjustments
+        if (firstIn != null) {
+            long lateMinutes = Duration.between(shiftStart, firstIn).toMinutes();
+            if (lateMinutes > 0) dto.addAdjustment("lateMinutes", lateMinutes);
 
-        // 🔹 Erkən gəlmə (Early Arrival)
-        long earlyArrivalMinutes = Duration.between(firstIn, shiftStart).toMinutes();
-        if (earlyArrivalMinutes > 0) dto.addAdjustment("earlyArrivalMinutes", earlyArrivalMinutes);
+            long earlyArrivalMinutes = Duration.between(firstIn, shiftStart).toMinutes();
+            if (earlyArrivalMinutes > 0) dto.addAdjustment("earlyArrivalMinutes", earlyArrivalMinutes);
+        }
 
-        // 🔹 Tez çıxma (Early Leave)
-        long earlyLeaveMinutes = Duration.between(lastOut, shiftEnd).toMinutes();
-        if (earlyLeaveMinutes > 0) dto.addAdjustment("earlyLeaveMinutes", earlyLeaveMinutes);
+        if (lastOut != null) {
+            long earlyLeaveMinutes = Duration.between(lastOut, shiftEnd).toMinutes();
+            if (earlyLeaveMinutes > 0) dto.addAdjustment("earlyLeaveMinutes", earlyLeaveMinutes);
 
-        // 🔹 Gec çıxma (Late Leave)
-        long lateLeaveMinutes = Duration.between(shiftEnd, lastOut).toMinutes();
-        if (lateLeaveMinutes > 0) dto.addAdjustment("lateLeaveMinutes", lateLeaveMinutes);
+            long lateLeaveMinutes = Duration.between(shiftEnd, lastOut).toMinutes();
+            if (lateLeaveMinutes > 0) dto.addAdjustment("lateLeaveMinutes", lateLeaveMinutes);
+        }
 
         return dto;
     }

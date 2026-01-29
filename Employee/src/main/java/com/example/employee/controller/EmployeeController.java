@@ -44,6 +44,7 @@ public class EmployeeController {
     public void delete(@PathVariable Long id) {
         employeeService.deleteById(id);
     }
+
     @GetMapping("/{id}/shift")
     public WorkShiftDto getShift(@PathVariable Long id) {
         return employeeService.getEmployeeShift(id);
