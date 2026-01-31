@@ -1,1 +1,3 @@
-rootProject.name = 'Biomas'
+rootProject.name = 'ms-biomas'
+include 'employee'
+include 'attendance'

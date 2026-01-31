@@ -1,0 +1,111 @@
+package com.example.employee.service.concrete;
+
+import com.example.employee.dao.entity.EmpPhotoEntity;
+import com.example.employee.dao.repository.EmployeePhotoRepository;
+import com.example.employee.exception.BadRequestException;
+import com.example.employee.exception.NotFoundException;
+import com.example.employee.model.response.EmployeePhotoResponse;
+import com.example.employee.service.abstraction.EmployeePhotoService;
+import com.example.employee.service.storage.StorageService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.OffsetDateTime;
+import java.util.Set;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class EmployeePhotoServiceImpl implements EmployeePhotoService {
+
+    private static final long MAX_SIZE_BYTES = 200 * 1024;
+    private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png");
+
+    private final EmployeePhotoRepository photoRepository;
+    private final StorageService storageService;
+
+    @Override
+    @Transactional
+    public void uploadOrReplace(Long employeeId, MultipartFile file) {
+        validate(employeeId, file);
+
+        // TODO: employee exists check (sənin EmployeeRepository-nin adını deyəndə əlavə edəcəm)
+        // ensureEmployeeExists(employeeId);
+
+        String folder = "employees/" + employeeId + "/photo";
+        String ext = "image/png".equals(file.getContentType()) ? ".png" : ".jpg";
+        String objectName = UUID.randomUUID() + ext;
+
+        // Köhnə aktiv foto varsa: əvvəl storage-dən sil, DB-də DELETED et (və ya sadəcə DELETED)
+        photoRepository.findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
+                .ifPresent(old -> {
+                    // əvvəl storage-dən sil (ən optimal)
+                    try {
+                        storageService.delete(old.getFolder(), old.getObjectName());
+                    } catch (Exception ignored) {
+                        // best-effort delete; istəsən log əlavə edərik
+                    }
+                    old.setStatus(EmpPhotoEntity.Status.DELETED);
+                    photoRepository.save(old);
+                });
+
+        // Upload (async ola bilər, amma DB consistency üçün sync saxlayırıq)
+        storageService.upload(folder, objectName, file);
+
+        // Save DB metadata
+        EmpPhotoEntity entity = EmpPhotoEntity.builder()
+//                .employeeId(employeeId)
+                .folder(folder)
+                .objectName(objectName)
+                .contentType(file.getContentType())
+                .sizeBytes(file.getSize())
+                .status(EmpPhotoEntity.Status.ACTIVE)
+                .createdAt(OffsetDateTime.now())
+                .build();
+
+        photoRepository.save(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeePhotoResponse getInfo(Long employeeId) {
+        EmpPhotoEntity photo = photoRepository
+                .findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
+                .orElseThrow(() -> new NotFoundException("Employee photo not found"));
+
+        String url = storageService.generateUrl(photo.getFolder(), photo.getObjectName());
+        return new EmployeePhotoResponse(employeeId, url);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long employeeId) {
+        EmpPhotoEntity photo = photoRepository
+                .findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
+                .orElseThrow(() -> new NotFoundException("Employee photo not found"));
+
+        storageService.delete(photo.getFolder(), photo.getObjectName());
+
+        photo.setStatus(EmpPhotoEntity.Status.DELETED);
+        photoRepository.save(photo);
+    }
+
+    private void validate(Long employeeId, MultipartFile file) {
+        if (employeeId == null || employeeId <= 0) {
+            throw new BadRequestException("Invalid employeeId");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File is required");
+        }
+        if (file.getSize() > MAX_SIZE_BYTES) {
+            throw new BadRequestException("Max file size is 200KB");
+        }
+        String ct = file.getContentType();
+        if (!StringUtils.hasText(ct) || !ALLOWED.contains(ct)) {
+            throw new BadRequestException("Only jpeg/png allowed");
+        }
+    }
+}
