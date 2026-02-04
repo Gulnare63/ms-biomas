@@ -13,7 +13,7 @@ import java.nio.file.*;
 
 @Service
 @Profile("local")
-public class LocalStorageService implements StorageService {
+public class LocalStorageServiceimpl implements StorageService {
 
     @Value("${storage.local.base-path:./uploads}")
     private String basePath;
@@ -59,7 +59,7 @@ public class LocalStorageService implements StorageService {
         try {
             Path filePath = Paths.get(basePath, folder, objectName);
             Files.deleteIfExists(filePath);
-            // istəsən boş folder-ləri də təmizlə:
+            // boş folder-ləri də təmizlə: muellimden sorusub lazimdirsa edecem
             // FileSystemUtils.deleteRecursively(Paths.get(basePath, folder).toFile());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to delete from server disk", e);

@@ -1,5 +1,6 @@
 package com.example.employee.dao.entity;
 
+import com.example.employee.model.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,7 +45,4 @@ public class EmpPhotoEntity{
     @Column(nullable=false)
     private OffsetDateTime createdAt;
 
-    public enum Status {
-        ACTIVE, DELETED
-    }
 }

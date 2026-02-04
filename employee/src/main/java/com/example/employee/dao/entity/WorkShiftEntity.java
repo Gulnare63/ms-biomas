@@ -27,8 +27,8 @@ public class WorkShiftEntity {
     private Long id;
 
     private String name;          // seher smenimi  axsammi onu gosterir
-    private LocalTime startTime;  // 09:00
-    private LocalTime endTime;    // 17:00
+    private LocalTime startTime;
+    private LocalTime endTime;
 
     @OneToMany(mappedBy = "workShift")
     private List<EmployeeEntity> employees;

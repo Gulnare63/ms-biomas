@@ -1,9 +1,12 @@
 package com.example.employee.service.concrete;
 
 import com.example.employee.dao.entity.EmpPhotoEntity;
+import com.example.employee.dao.entity.EmployeeEntity;
 import com.example.employee.dao.repository.EmployeePhotoRepository;
+import com.example.employee.dao.repository.EmployeeRepository;
 import com.example.employee.exception.BadRequestException;
 import com.example.employee.exception.NotFoundException;
+import com.example.employee.model.enums.Status;
 import com.example.employee.model.response.EmployeePhotoResponse;
 import com.example.employee.service.abstraction.EmployeePhotoService;
 import com.example.employee.service.storage.StorageService;
@@ -25,6 +28,7 @@ public class EmployeePhotoServiceImpl implements EmployeePhotoService {
     private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png");
 
     private final EmployeePhotoRepository photoRepository;
+    private final EmployeeRepository employeeRepository;
     private final StorageService storageService;
 
     @Override
@@ -32,39 +36,41 @@ public class EmployeePhotoServiceImpl implements EmployeePhotoService {
     public void uploadOrReplace(Long employeeId, MultipartFile file) {
         validate(employeeId, file);
 
-        // TODO: employee exists check (sənin EmployeeRepository-nin adını deyəndə əlavə edəcəm)
-        // ensureEmployeeExists(employeeId);
+        EmployeeEntity employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NotFoundException("Employee not found"));
 
         String folder = "employees/" + employeeId + "/photo";
         String ext = "image/png".equals(file.getContentType()) ? ".png" : ".jpg";
         String objectName = UUID.randomUUID() + ext;
 
-        // Köhnə aktiv foto varsa: əvvəl storage-dən sil, DB-də DELETED et (və ya sadəcə DELETED)
-        photoRepository.findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
-                .ifPresent(old -> {
-                    // əvvəl storage-dən sil (ən optimal)
-                    try {
-                        storageService.delete(old.getFolder(), old.getObjectName());
-                    } catch (Exception ignored) {
-                        // best-effort delete; istəsən log əlavə edərik
-                    }
-                    old.setStatus(EmpPhotoEntity.Status.DELETED);
-                    photoRepository.save(old);
-                });
+        EmpPhotoEntity entity = photoRepository.findByEmployeeId(employeeId)
+                .orElse(null);
 
-        // Upload (async ola bilər, amma DB consistency üçün sync saxlayırıq)
+        if (entity != null) {
+            try {
+                if (StringUtils.hasText(entity.getFolder()) && StringUtils.hasText(entity.getObjectName())) {
+                    storageService.delete(entity.getFolder(), entity.getObjectName());
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
         storageService.upload(folder, objectName, file);
 
-        // Save DB metadata
-        EmpPhotoEntity entity = EmpPhotoEntity.builder()
-//                .employeeId(employeeId)
-                .folder(folder)
-                .objectName(objectName)
-                .contentType(file.getContentType())
-                .sizeBytes(file.getSize())
-                .status(EmpPhotoEntity.Status.ACTIVE)
-                .createdAt(OffsetDateTime.now())
-                .build();
+        if (entity == null) {
+            entity = EmpPhotoEntity.builder()
+                    .employee(employee)
+                    .createdAt(OffsetDateTime.now())
+                    .build();
+        }
+
+        entity.setFolder(folder);
+        entity.setObjectName(objectName);
+        entity.setContentType(file.getContentType());
+        entity.setSizeBytes(file.getSize());
+        entity.setStatus(Status.ACTIVE);
+
+        entity.setCreatedAt(OffsetDateTime.now());
 
         photoRepository.save(entity);
     }
@@ -73,7 +79,7 @@ public class EmployeePhotoServiceImpl implements EmployeePhotoService {
     @Transactional(readOnly = true)
     public EmployeePhotoResponse getInfo(Long employeeId) {
         EmpPhotoEntity photo = photoRepository
-                .findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
+                .findByEmployeeIdAndStatus(employeeId, Status.ACTIVE)
                 .orElseThrow(() -> new NotFoundException("Employee photo not found"));
 
         String url = storageService.generateUrl(photo.getFolder(), photo.getObjectName());
@@ -84,12 +90,12 @@ public class EmployeePhotoServiceImpl implements EmployeePhotoService {
     @Transactional
     public void delete(Long employeeId) {
         EmpPhotoEntity photo = photoRepository
-                .findByEmployeeIdAndStatus(employeeId, EmpPhotoEntity.Status.ACTIVE)
+                .findByEmployeeIdAndStatus(employeeId, Status.ACTIVE)
                 .orElseThrow(() -> new NotFoundException("Employee photo not found"));
 
         storageService.delete(photo.getFolder(), photo.getObjectName());
 
-        photo.setStatus(EmpPhotoEntity.Status.DELETED);
+        photo.setStatus(Status.DELETED);
         photoRepository.save(photo);
     }
 

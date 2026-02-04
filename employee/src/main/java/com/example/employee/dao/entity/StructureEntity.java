@@ -38,6 +38,4 @@ public class StructureEntity {
     @JoinColumn(name = "parent_id")
     private StructureEntity parent;
 
-//    @OneToMany(mappedBy = "parent")
-//    private List<StructureEntity> children;
 }

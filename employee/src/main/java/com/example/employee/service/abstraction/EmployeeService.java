@@ -2,6 +2,7 @@ package com.example.employee.service.abstraction;
 
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
+import com.example.employee.model.request.RegisterFingerRequest;
 import com.example.employee.model.request.WorkShiftDto;
 import com.example.employee.model.response.EmployeeDetailResponse;
 import com.example.employee.model.response.EmployeeListResponse;
@@ -20,8 +21,11 @@ public interface EmployeeService {
 
     void deleteById(Long id);
 
-//    EmployeeWorkShiftResponse getWorkShiftByDate(Long employeeId, LocalDate date);
-
     WorkShiftDto getEmployeeShift(Long employeeId);
+
+    void editStatus(Long id, Boolean status);
+
+    byte[] getQr(Long employeeId);
+
 
 }

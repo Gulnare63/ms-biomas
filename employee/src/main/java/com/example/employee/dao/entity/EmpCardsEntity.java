@@ -27,8 +27,8 @@ public class EmpCardsEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;       // Card name
-    private String number;     // Card number
+    private String name;
+    private String number;
     private Boolean isActive;
 
     @ManyToOne(fetch = FetchType.LAZY)
