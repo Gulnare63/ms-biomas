@@ -37,9 +37,10 @@ public class EmployeeEntity {
     private String name;
     private String surname;
     private String middleName;
-
     private String duty;
 
+    @Column(nullable = false)
+    private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "work_shift_id")
@@ -59,7 +60,6 @@ public class EmployeeEntity {
     @JoinColumn(name = "structure_id")
     private StructureEntity structure;
 
-
     @OneToMany(mappedBy = "employee",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
@@ -69,6 +69,5 @@ public class EmployeeEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<EmpCardsEntity> cards;
-
 
 }

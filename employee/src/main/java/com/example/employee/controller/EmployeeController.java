@@ -2,11 +2,14 @@ package com.example.employee.controller;
 
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
+import com.example.employee.model.request.RegisterFingerRequest;
 import com.example.employee.model.request.WorkShiftDto;
 import com.example.employee.model.response.EmployeeDetailResponse;
 import com.example.employee.model.response.EmployeeListResponse;
 import com.example.employee.service.abstraction.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,5 +51,20 @@ public class EmployeeController {
     public WorkShiftDto getShift(@PathVariable Long id) {
         return employeeService.getEmployeeShift(id);
     }
+
+    @PutMapping("/edit-status/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void editStatus(@PathVariable Long id,@RequestParam Boolean status) {
+        employeeService.editStatus(id, status);
+    }
+
+    @GetMapping("/qr/{id}")
+    public ResponseEntity<byte[]> getQr(@PathVariable Long id) {
+        byte[] qr = employeeService.getQr(id);
+        return ResponseEntity.ok()
+                .header("Content-Type", "image/png")
+                .body(qr);
+    }
+
 
 }

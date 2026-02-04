@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Profile("dev")
-public class MinioService implements StorageService {
+public class MinioServiceimpl implements StorageService {
 
     @Value("${storage.bucket}")
     private String bucketName;
@@ -25,7 +25,7 @@ public class MinioService implements StorageService {
 
     private final MinioClient minioClient;
 
-    public MinioService(MinioClient minioClient) {
+    public MinioServiceimpl(MinioClient minioClient) {
         this.minioClient = minioClient;
     }
 

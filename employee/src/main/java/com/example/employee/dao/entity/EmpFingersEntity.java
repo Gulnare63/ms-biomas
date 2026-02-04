@@ -1,21 +1,17 @@
 package com.example.employee.dao.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.employee.model.enums.HandType;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(name = "emp_fingers")
+@Table(
+        name = "emp_fingers",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_emp_fingers_emp_idx_hand",
+                columnNames = {"emp_id", "finger_index", "hand"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,9 +23,15 @@ public class EmpFingersEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "TEXT")
     private String fingerprint;
+
+    @Column(name = "finger_index", nullable = false)
     private Integer fingerIndex;  // 1–10
-    private String hand;          // LEFT / RIGHT
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private HandType hand;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)

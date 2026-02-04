@@ -5,7 +5,7 @@ import com.example.employee.model.response.EmployeePhotoResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface EmployeePhotoService {
-    void uploadOrReplace(Long employeeId, MultipartFile file);   // müəllim: void
-    EmployeePhotoResponse getInfo(Long employeeId);              // JSON
-    void delete(Long employeeId);                                // void
+    void uploadOrReplace(Long employeeId, MultipartFile file);
+    EmployeePhotoResponse getInfo(Long employeeId);
+    void delete(Long employeeId);
 }

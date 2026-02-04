@@ -1,16 +1,20 @@
 package com.example.employee.service.concrete;
 
+import com.example.employee.dao.entity.EmpFingersEntity;
 import com.example.employee.dao.entity.EmployeeEntity;
 import com.example.employee.dao.entity.StructureEntity;
+import com.example.employee.dao.repository.EmpFingersRepository;
 import com.example.employee.dao.repository.EmployeeRepository;
 import com.example.employee.dao.repository.StructureRepository;
 import com.example.employee.mapper.ManualEmployeeMapper;
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
+import com.example.employee.model.request.RegisterFingerRequest;
 import com.example.employee.model.request.WorkShiftDto;
 import com.example.employee.model.response.EmployeeDetailResponse;
 import com.example.employee.model.response.EmployeeListResponse;
 import com.example.employee.service.abstraction.EmployeeService;
+import com.example.employee.service.abstraction.QrCodeService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +29,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final StructureRepository structureRepository;
     private final ManualEmployeeMapper mapper;
+    private final QrCodeService qrCodeService;
+    private final EmpFingersRepository empFingersRepository;
+
 
     @Override
     public void create(EmployeeSaveRequest request) {
@@ -87,18 +94,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-    //    @Override
-//    public EmployeeWorkShiftResponse getWorkShiftByDate(Long employeeId, LocalDate date) {
-//
-//        WorkShiftEntity shift = employeeRepository
-//                .findWorkShiftByEmployeeIdAndDate(employeeId, date);
-//        // (burada tarixə görə smena tapılır – real biznes logic)
-//
-//        EmployeeWorkShiftResponse response = new EmployeeWorkShiftResponse();
-//        response.setStartTime(shift.getStartTime());
-//        response.setEndTime(shift.getEndTime());
-//        return response;
-//    }
     @Override
     public WorkShiftDto getEmployeeShift(Long employeeId) {
         EmployeeEntity employee = employeeRepository.findById(employeeId)
@@ -109,5 +104,27 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .endTime(employee.getWorkShift().getEndTime())
                 .build();
     }
+
+    @Override
+    public void editStatus(Long id, Boolean status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Status must not be null");
+        }
+
+        EmployeeEntity employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+
+        employee.setIsActive(status);
+        employeeRepository.save(employee);
+    }
+
+    @Override
+    public byte[] getQr(Long employeeId) {
+        EmployeeEntity employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+
+        return qrCodeService.generateEmployeeQr(employee.getId());
+    }
+
 
 }

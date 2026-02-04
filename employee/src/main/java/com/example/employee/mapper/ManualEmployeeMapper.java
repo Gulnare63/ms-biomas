@@ -2,6 +2,7 @@ package com.example.employee.mapper;
 
 import com.example.employee.dao.entity.*;
 
+import com.example.employee.model.enums.Status;
 import com.example.employee.model.request.EmployeeSaveRequest;
 import com.example.employee.model.response.EmployeeDetailResponse;
 import com.example.employee.model.response.EmployeeListResponse;
@@ -34,7 +35,7 @@ public class ManualEmployeeMapper {
 
         // Face yalnız ACTIVE olanda true olsun (yoxsa DELETED olsa da entity qalır)
         EmpPhotoEntity photo = employee.getPhoto();
-        response.setHasFace(photo != null && photo.getStatus() == EmpPhotoEntity.Status.ACTIVE);
+        response.setHasFace(photo != null && photo.getStatus() == Status.ACTIVE);
 
         response.setHasFinger(employee.getFingers() != null && !employee.getFingers().isEmpty());
         return response;
@@ -52,9 +53,9 @@ public class ManualEmployeeMapper {
         response.setDuty(nvl(employee.getDuty()));
         response.setStructureName(employee.getStructure() != null ? nvl(employee.getStructure().getName()) : "");
 
-        // ✅ əvvəllər filename qaytarırdın, indi URL qaytarırıq
+
         EmpPhotoEntity photo = employee.getPhoto();
-        if (photo != null && photo.getStatus() == EmpPhotoEntity.Status.ACTIVE) {
+        if (photo != null && photo.getStatus() == Status.ACTIVE) {
             String url = storageService.generateUrl(photo.getFolder(), photo.getObjectName());
             response.setFace(url);
         } else {
