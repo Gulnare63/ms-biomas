@@ -1,13 +1,16 @@
 package com.example.employee.controller;
 
+import com.example.employee.model.request.EmployeFilterRequest;
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
-import com.example.employee.model.request.RegisterFingerRequest;
 import com.example.employee.model.request.WorkShiftDto;
 import com.example.employee.model.response.EmployeeDetailResponse;
+import com.example.employee.model.response.EmployeeFilterResponse;
 import com.example.employee.model.response.EmployeeListResponse;
 import com.example.employee.service.abstraction.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,6 +67,11 @@ public class EmployeeController {
         return ResponseEntity.ok()
                 .header("Content-Type", "image/png")
                 .body(qr);
+    }
+
+    @GetMapping("/filter")
+    public Page<EmployeeFilterResponse> filter(EmployeFilterRequest request, Pageable pageable) {
+        return employeeService.filter(request, pageable);
     }
 
 

@@ -1,12 +1,15 @@
 package com.example.attendance.controller;
 
 import com.example.attendance.dao.entity.TotalWorkHourEntity;
+import com.example.attendance.model.request.AttendanceFilterRequest;
 import com.example.attendance.model.request.AttendanceStatusDto;
+import com.example.attendance.model.response.AttendanceLogRow;
 import com.example.attendance.service.abstraction.AttendanceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 
 @RestController
@@ -30,5 +33,10 @@ public class AttendanceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return attendanceService.getAttendanceStatus(employeeId, date);
+    }
+
+    @PostMapping("/filter")
+    public Page<AttendanceLogRow> filter(@RequestBody AttendanceFilterRequest request, Pageable pageable) {
+        return attendanceService.filter(request, pageable);
     }
 }

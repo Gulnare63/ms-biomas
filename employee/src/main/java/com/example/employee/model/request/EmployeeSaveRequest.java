@@ -10,5 +10,6 @@ public class EmployeeSaveRequest {
     private String surname;
     private String middleName;
     private Long structureId;
-    private String duty;
+    private Long dutyId;
+
 }

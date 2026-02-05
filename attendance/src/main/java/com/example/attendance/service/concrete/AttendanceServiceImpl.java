@@ -7,11 +7,14 @@ import com.example.attendance.dao.entity.TotalWorkHourEntity;
 import com.example.attendance.dao.repository.BiometricLogRepository;
 import com.example.attendance.dao.repository.TotalWorkHourRepository;
 import com.example.attendance.model.enums.InOutType;
+import com.example.attendance.model.request.AttendanceFilterRequest;
 import com.example.attendance.model.request.AttendanceStatusDto;
+import com.example.attendance.model.response.AttendanceLogRow;
 import com.example.attendance.service.abstraction.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -225,6 +228,27 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         return dto;
+    }
+
+
+    @Override
+    public Page<AttendanceLogRow> filter(
+            AttendanceFilterRequest req,
+            Pageable pageable
+    ) {
+        return biometricLogRepository.filter(
+                emptyToNull(req.getName()),
+                emptyToNull(req.getSurname()),
+                req.getStructureId(),
+                req.getDevicePlaceId(),
+                req.getStartTime(),
+                req.getEndTime(),
+                pageable
+        );
+    }
+
+    private String emptyToNull(String s) {
+        return (s == null || s.trim().isEmpty()) ? null : s.trim();
     }
 
 }

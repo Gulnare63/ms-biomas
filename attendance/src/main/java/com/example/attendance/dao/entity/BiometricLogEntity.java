@@ -31,7 +31,7 @@ public class BiometricLogEntity {
     @Enumerated(EnumType.STRING)
     private InOutType inOut;
 
-    private String deviceId;
+    private Long  deviceId;
 
     private LocalDateTime createTimestamp;
 }
