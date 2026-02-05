@@ -1,8 +1,11 @@
 package com.example.employee.dao.entity;
 
+import com.example.employee.model.enums.EmployeeStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,10 +40,17 @@ public class EmployeeEntity {
     private String name;
     private String surname;
     private String middleName;
-    private String duty;
 
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "duty_id")
+    private DutyEntity duty;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "work_shift_id")
