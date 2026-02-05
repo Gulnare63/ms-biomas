@@ -12,6 +12,8 @@ public interface AttendanceLogRow {
 
     VerifyType getVerify();
     LocalDateTime getDateTime();
+
+
     InOutType getInOut();
 
     String getDeviceName();
