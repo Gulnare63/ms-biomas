@@ -1,7 +1,7 @@
+
 package com.example.employee.mapper;
 
 import com.example.employee.dao.entity.*;
-
 import com.example.employee.model.enums.Status;
 import com.example.employee.model.request.EmployeeSaveRequest;
 import com.example.employee.model.response.EmployeeDetailResponse;
@@ -29,11 +29,12 @@ public class ManualEmployeeMapper {
         response.setName(nvl(employee.getName()));
         response.setSurname(nvl(employee.getSurname()));
         response.setMiddleName(nvl(employee.getMiddleName()));
-        response.setDuty(nvl(employee.getDuty()));
+
+        response.setDuty(employee.getDuty() != null ? nvl(employee.getDuty().getName()) : "");
+
         response.setStructureName(employee.getStructure() != null ? nvl(employee.getStructure().getName()) : "");
         response.setHasCard(employee.getCards() != null && !employee.getCards().isEmpty());
 
-        // Face yalnız ACTIVE olanda true olsun (yoxsa DELETED olsa da entity qalır)
         EmpPhotoEntity photo = employee.getPhoto();
         response.setHasFace(photo != null && photo.getStatus() == Status.ACTIVE);
 
@@ -50,9 +51,10 @@ public class ManualEmployeeMapper {
         response.setName(nvl(employee.getName()));
         response.setSurname(nvl(employee.getSurname()));
         response.setMiddleName(nvl(employee.getMiddleName()));
-        response.setDuty(nvl(employee.getDuty()));
-        response.setStructureName(employee.getStructure() != null ? nvl(employee.getStructure().getName()) : "");
 
+        response.setDuty(employee.getDuty() != null ? nvl(employee.getDuty().getName()) : "");
+
+        response.setStructureName(employee.getStructure() != null ? nvl(employee.getStructure().getName()) : "");
 
         EmpPhotoEntity photo = employee.getPhoto();
         if (photo != null && photo.getStatus() == Status.ACTIVE) {
@@ -63,7 +65,7 @@ public class ManualEmployeeMapper {
         }
 
         response.setCard(employee.getCards() != null && !employee.getCards().isEmpty()
-                ? employee.getCards().get(0)
+                ? employee.getCards().getFirst()
                 : null);
 
         response.setEmployeeFingers(mapFingers(employee.getFingers()));
@@ -72,7 +74,7 @@ public class ManualEmployeeMapper {
         return response;
     }
 
-    public EmployeeEntity toEntity(EmployeeSaveRequest request, StructureEntity structure) {
+    public EmployeeEntity toEntity(EmployeeSaveRequest request, StructureEntity structure, DutyEntity duty) {
         if (request == null) return null;
 
         EmployeeEntity employee = new EmployeeEntity();
@@ -80,20 +82,23 @@ public class ManualEmployeeMapper {
         employee.setName(nvl(request.getName()));
         employee.setSurname(nvl(request.getSurname()));
         employee.setMiddleName(nvl(request.getMiddleName()));
-        employee.setDuty(nvl(request.getDuty()));
+
+        employee.setDuty(duty);
         employee.setStructure(structure);
 
         return employee;
     }
 
-    public void updateEntity(EmployeeEntity employee, EmployeeSaveRequest request, StructureEntity structure) {
+    public void updateEntity(EmployeeEntity employee, EmployeeSaveRequest request, StructureEntity structure, DutyEntity duty) {
         if (employee == null || request == null) return;
 
         employee.setPersonalCode(request.getPersonalNumber() != null ? request.getPersonalNumber() : employee.getPersonalCode());
         employee.setName(request.getName() != null ? request.getName() : employee.getName());
         employee.setSurname(request.getSurname() != null ? request.getSurname() : employee.getSurname());
         employee.setMiddleName(request.getMiddleName() != null ? request.getMiddleName() : employee.getMiddleName());
-        employee.setDuty(request.getDuty() != null ? request.getDuty() : employee.getDuty());
+
+        employee.setDuty(duty != null ? duty : employee.getDuty());
+
         employee.setStructure(structure != null ? structure : employee.getStructure());
     }
 

@@ -27,7 +27,7 @@ public class EmpFingersEntity {
     private String fingerprint;
 
     @Column(name = "finger_index", nullable = false)
-    private Integer fingerIndex;  // 1–10
+    private Integer fingerIndex;  // 1–5
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

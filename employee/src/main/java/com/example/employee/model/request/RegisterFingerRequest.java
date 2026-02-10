@@ -9,7 +9,7 @@ import lombok.Setter;
 public class RegisterFingerRequest {
 
     private Long employeeId;
-    private Integer fingerIndex;   // 1–10
+    private Integer fingerIndex;   // 1–5
     private HandType hand;
     private Long enrollDeviceId;
 }

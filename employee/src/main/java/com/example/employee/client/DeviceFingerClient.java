@@ -14,4 +14,5 @@ public interface DeviceFingerClient {
 
     @PostMapping("/v1/devices/fingers/enroll")
     FingerEnrollResponse enrollFinger(@RequestBody FingerEnrollRequest request);
+
 }

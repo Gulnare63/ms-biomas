@@ -34,4 +34,5 @@ public class EmpCardsEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
+
 }

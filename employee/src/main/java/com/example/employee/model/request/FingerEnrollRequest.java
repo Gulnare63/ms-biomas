@@ -11,4 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FingerEnrollRequest {
     private Long enrollDeviceId;
+    private Integer fingerIndex;
+
 }
