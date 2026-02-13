@@ -1,7 +1,9 @@
 package com.example.employee.service.concrete;
 
+import com.example.employee.dao.entity.DutyEntity;
 import com.example.employee.dao.entity.EmployeeEntity;
 import com.example.employee.dao.entity.StructureEntity;
+import com.example.employee.dao.repository.DutyRepository;
 import com.example.employee.dao.repository.EmployeeRepository;
 import com.example.employee.dao.repository.StructureRepository;
 import com.example.employee.mapper.ManualEmployeeMapper;
@@ -31,6 +33,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final StructureRepository structureRepository;
     private final ManualEmployeeMapper mapper;
     private final QrCodeService qrCodeService;
+    private  final DutyRepository dutyRepository;
 
 
     @Override
@@ -38,7 +41,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         StructureEntity structure = structureRepository.findById(request.getStructureId())
                 .orElseThrow(() -> new EntityNotFoundException("Structure not found"));
 
-        EmployeeEntity employee = mapper.toEntity(request, structure);
+        DutyEntity duty = dutyRepository.findById(request.getDutyId())
+                .orElseThrow(() -> new EntityNotFoundException("duty not found"));
+
+        EmployeeEntity employee = mapper.toEntity(request, structure, duty);
         employeeRepository.save(employee);
     }
 
@@ -84,8 +90,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         StructureEntity structure = structureRepository.findById(request.getStructureId())
                 .orElseThrow(() -> new EntityNotFoundException("Structure not found"));
+        DutyEntity duty = dutyRepository.findById(request.getDutyId())
+                .orElseThrow(() -> new EntityNotFoundException("duty not found"));
 
-        mapper.updateEntity(employee, request, structure);
+        mapper.updateEntity(employee, request, structure,duty);
         employeeRepository.save(employee);
     }
 
