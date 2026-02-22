@@ -13,9 +13,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(name = "emp_cards")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,6 +35,7 @@ public class EmpCardsEntity {
     private Boolean isActive;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
 

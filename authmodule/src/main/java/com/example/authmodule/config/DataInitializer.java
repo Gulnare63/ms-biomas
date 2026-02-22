@@ -41,7 +41,7 @@ public class DataInitializer {
                                         Set.of(userRead, userWrite, userDelete));
                         createOrUpdateRole(roleRepository, RoleName.ADMIN, "Admin",
                                         Set.of(userRead, userWrite, userDelete));
-                        createOrUpdateRole(roleRepository, RoleName.HR, "HR", Set.of(userRead, userWrite,userDelete));
+                        createOrUpdateRole(roleRepository, RoleName.HR, "HR", Set.of(userRead, userWrite));
                         createOrUpdateRole(roleRepository, RoleName.SALES, "Sales", Set.of(userRead));
                         createOrUpdateRole(roleRepository, RoleName.USER, "Basic user", Set.of());
 

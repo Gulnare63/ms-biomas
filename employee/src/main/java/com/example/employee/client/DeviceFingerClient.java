@@ -6,10 +6,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(
-        name = "device-service",
-        url = "${device.service.url}"
-)
+@FeignClient(name="device", url="${device.service.url}")
+//@FeignClient(name="device", url="http://${device.service.url}")
 public interface DeviceFingerClient {
 
     @PostMapping("/v1/devices/fingers/enroll")

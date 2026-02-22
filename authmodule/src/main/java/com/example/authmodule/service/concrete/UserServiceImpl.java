@@ -1,8 +1,8 @@
 package com.example.authmodule.service.concrete;
 
-
 import com.example.authmodule.dao.entity.RoleEntity;
 import com.example.authmodule.dao.entity.UserEntity;
+import com.example.authmodule.dao.repo.RefreshTokenRepository;
 import com.example.authmodule.dao.repo.RoleRepository;
 import com.example.authmodule.dao.repo.UserRepository;
 import com.example.authmodule.exception.UserNotFoundException;
@@ -26,6 +26,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private  final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     @Transactional
@@ -72,6 +73,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+
     @Transactional
     public void updateUser(Long id, UserUpdateRequest request) {
         UserEntity user = userRepository.findById(id)
@@ -83,14 +85,48 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
     }
+//
+//    @Override
+//    @Auditable(
+//            module = "AUTH",
+//            entityClass = UserEntity.class,
+//            action = AuditAction.DELETE
+//    )
+//    @Transactional
+//    public void deleteUser(Long id) {
+//        if (!userRepository.existsById(id)) {
+//            throw new UserNotFoundException("User not found with id: " + id);
+//        }
+//        userRepository.deleteById(id);
+//    }
+//@Override
+//@Auditable(
+//        module = "AUTH",
+//        entityClass = UserEntity.class,
+//        action = AuditAction.DELETE
+//)
+//@Transactional
+//public void deleteUser(Long id) {
+//
+//    UserEntity user = userRepository.findById(id)
+//            .orElseThrow(() -> new UserNotFoundException("User not found"));
+//
+//    userRepository.delete(user);
+//}
 
     @Override
+
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User not found with id: " + id);
-        }
-        userRepository.deleteById(id);
+
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // əvvəl child-ları sil
+        refreshTokenRepository.deleteByUserId(id);
+
+        // sonra user-i sil
+        userRepository.delete(user);
     }
 
     @Override
@@ -106,7 +142,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    @Override
+
     @Transactional
     public void removeRole(Long userId, Long roleId) {
         UserEntity user = userRepository.findById(userId)

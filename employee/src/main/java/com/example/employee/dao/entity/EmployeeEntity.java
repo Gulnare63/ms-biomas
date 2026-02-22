@@ -20,11 +20,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 import java.util.List;
 
 @Entity
 @Table(name = "employeee")
+@Audited
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -45,6 +49,7 @@ public class EmployeeEntity {
     private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "duty_id")
     private DutyEntity duty;
 
@@ -53,31 +58,37 @@ public class EmployeeEntity {
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "work_shift_id")
     private WorkShiftEntity workShift;
 
     @OneToOne(mappedBy = "employee",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @NotAudited
     private EmpDetailsEntity details;
 
     @OneToOne(mappedBy = "employee",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @NotAudited
     private EmpPhotoEntity photo;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "structure_id")
     private StructureEntity structure;
 
     @OneToMany(mappedBy = "employee",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @NotAudited
     private List<EmpFingersEntity> fingers;
 
     @OneToMany(mappedBy = "employee",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @NotAudited
     private List<EmpCardsEntity> cards;
 
 }

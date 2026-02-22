@@ -3,6 +3,8 @@ package com.example.employee.dao.entity;
 import com.example.employee.model.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 import java.time.OffsetDateTime;
 
@@ -12,6 +14,7 @@ import java.time.OffsetDateTime;
 })
 @Getter
 @Setter
+@Audited
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,6 +25,7 @@ public class EmpPhotoEntity{
     private Long id;
 
     @OneToOne
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
 

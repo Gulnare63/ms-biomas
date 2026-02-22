@@ -3,6 +3,8 @@ package com.example.employee.dao.entity;
 import com.example.employee.model.enums.HandType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(
@@ -12,6 +14,7 @@ import lombok.*;
                 columnNames = {"emp_id", "finger_index", "hand"}
         )
 )
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,6 +37,7 @@ public class EmpFingersEntity {
     private HandType hand;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
 }

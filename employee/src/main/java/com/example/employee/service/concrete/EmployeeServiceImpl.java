@@ -46,6 +46,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         EmployeeEntity employee = mapper.toEntity(request, structure, duty);
         employeeRepository.save(employee);
+
+
     }
 
     @Override

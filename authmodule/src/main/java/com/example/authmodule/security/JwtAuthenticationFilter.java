@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7).trim(); // trim() əlavə edildi
+        final String jwt = authHeader.substring(7).trim();
 
         final String username;
         try {

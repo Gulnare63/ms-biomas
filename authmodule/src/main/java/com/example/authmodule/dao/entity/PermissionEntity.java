@@ -1,6 +1,7 @@
 package com.example.authmodule.dao.entity;
 
 import com.example.authmodule.enums.PermissionName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,5 +30,7 @@ public class PermissionEntity {
 
     @ManyToMany(mappedBy = "permissions")
     @Builder.Default
+    @JsonIgnore
+
     private Set<RoleEntity> roles = new HashSet<>();
 }

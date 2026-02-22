@@ -1,3 +1,5 @@
 rootProject.name = 'ms-biomas'
 include 'employee'
 include 'attendance'
+include 'authmodule'
+include 'audit'

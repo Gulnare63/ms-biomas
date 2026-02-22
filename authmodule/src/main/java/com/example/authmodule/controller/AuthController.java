@@ -1,5 +1,6 @@
 package com.example.authmodule.controller;
-
+import com.example.audit.aop.annotation.AuditLog;
+import com.example.authmodule.dao.entity.UserEntity;
 import com.example.authmodule.model.request.LoginRequest;
 import com.example.authmodule.model.request.RefreshTokenRequest;
 import com.example.authmodule.model.response.AuthResponse;
@@ -11,7 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+//@AuditLog(module = "AUTH", trackChanges = true, entityClass = UserEntity.class)
 @RequestMapping("/auth")
+@AuditLog(module = "AUTH")
+
 @RequiredArgsConstructor
 public class AuthController {
 

@@ -1,5 +1,6 @@
 package com.example.authmodule.dao.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,6 +40,7 @@ public class UserEntity {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
+    @JsonIgnore
     private Set<RoleEntity> roles = new HashSet<>();
 
     @PrePersist
