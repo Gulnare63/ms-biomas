@@ -7,6 +7,8 @@ import com.example.employee.dao.repository.DutyRepository;
 import com.example.employee.dao.repository.EmployeeRepository;
 import com.example.employee.dao.repository.StructureRepository;
 import com.example.employee.mapper.ManualEmployeeMapper;
+import com.example.employee.model.enums.EmployeeStatus;
+import com.example.employee.model.enums.Status;
 import com.example.employee.model.request.EmployeFilterRequest;
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
@@ -17,11 +19,13 @@ import com.example.employee.model.response.EmployeeListResponse;
 import com.example.employee.service.abstraction.EmployeeService;
 import com.example.employee.service.abstraction.QrCodeService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -49,35 +53,50 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 
     }
+//
+//    @Override
+//    public List<EmployeeListResponse> getAllByFilter(EmployeeFilterRequest filter) {
+//        Specification<EmployeeEntity> spec = (root, query, cb) -> {
+//            var predicates = cb.conjunction();
+//
+//            if (filter.getPersonalNumber() != null)
+//                predicates.getExpressions().add(
+//                        cb.equal(root.get("personalCode"), filter.getPersonalNumber()));
+//
+//            if (filter.getName() != null)
+//                predicates.getExpressions().add(
+//                        cb.like(cb.lower(root.get("name")),
+//                                "%" + filter.getName().toLowerCase() + "%"));
+//
+//            if (filter.getStructureId() != null)
+//                predicates.getExpressions().add(
+//                        cb.equal(root.get("structure").get("id"), filter.getStructureId()));
+//
+//            return predicates;
+//        };
+//
+//        return employeeRepository.findAll(spec)
+//                .stream()
+//                .map(mapper::toListResponse)
+//                .toList();
+//    }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EmployeeListResponse> getAllByFilter(EmployeeFilterRequest filter) {
-        Specification<EmployeeEntity> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
 
-            if (filter.getPersonalNumber() != null)
-                predicates.getExpressions().add(
-                        cb.equal(root.get("personalCode"), filter.getPersonalNumber()));
+        String personal = (filter.getPersonalNumber() == null || filter.getPersonalNumber().isBlank())
+                ? null : filter.getPersonalNumber();
 
-            if (filter.getName() != null)
-                predicates.getExpressions().add(
-                        cb.like(cb.lower(root.get("name")),
-                                "%" + filter.getName().toLowerCase() + "%"));
+        String name = (filter.getName() == null || filter.getName().isBlank())
+                ? null : filter.getName();
 
-            if (filter.getStructureId() != null)
-                predicates.getExpressions().add(
-                        cb.equal(root.get("structure").get("id"), filter.getStructureId()));
+        Long structureId = filter.getStructureId();
 
-            return predicates;
-        };
-
-        return employeeRepository.findAll(spec)
-                .stream()
-                .map(mapper::toListResponse)
-                .toList();
+        return employeeRepository.findAllForList(personal, name, structureId);
     }
-
     @Override
+    @Transactional(readOnly = true)
     public EmployeeDetailResponse getById(Long id) {
         EmployeeEntity employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
@@ -116,7 +135,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void editStatus(Long id, Boolean status) {
+    public void editStatus(Long id, EmployeeStatus status) {
         if (status == null) {
             throw new IllegalArgumentException("Status must not be null");
         }
@@ -124,7 +143,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         EmployeeEntity employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
 
-        employee.setIsActive(status);
+        employee.setStatus(status);
         employeeRepository.save(employee);
     }
 

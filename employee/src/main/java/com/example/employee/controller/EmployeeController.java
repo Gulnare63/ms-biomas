@@ -1,5 +1,7 @@
 package com.example.employee.controller;
 
+import com.example.employee.model.enums.EmployeeStatus;
+import com.example.employee.model.enums.Status;
 import com.example.employee.model.request.EmployeFilterRequest;
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
@@ -29,10 +31,22 @@ public class EmployeeController {
         employeeService.create(request);
     }
 
-    @GetMapping
-    public List<EmployeeListResponse> getAll(EmployeeFilterRequest filter) {
-        return employeeService.getAllByFilter(filter);
-    }
+//    @GetMapping
+//    public List<EmployeeListResponse> getAll(EmployeeFilterRequest filter) {
+//        return employeeService.getAllByFilter(filter);
+//    }
+@GetMapping
+public List<EmployeeListResponse> getAll(
+        @RequestParam(required = false) String personalNumber,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) Long structureId
+) {
+    EmployeeFilterRequest filter = new EmployeeFilterRequest();
+    filter.setPersonalNumber(personalNumber);
+    filter.setName(name);
+    filter.setStructureId(structureId);
+    return employeeService.getAllByFilter(filter);
+}
 
     @GetMapping("/{id}")
     public EmployeeDetailResponse getById(@PathVariable Long id) {
@@ -57,7 +71,7 @@ public class EmployeeController {
 
     @PutMapping("/edit-status/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public void editStatus(@PathVariable Long id,@RequestParam Boolean status) {
+    public void editStatus(@PathVariable Long id,@RequestParam EmployeeStatus status) {
         employeeService.editStatus(id, status);
     }
 

@@ -1,5 +1,7 @@
 package com.example.employee.service.abstraction;
 
+import com.example.employee.model.enums.EmployeeStatus;
+import com.example.employee.model.enums.Status;
 import com.example.employee.model.request.EmployeFilterRequest;
 import com.example.employee.model.request.EmployeeFilterRequest;
 import com.example.employee.model.request.EmployeeSaveRequest;
@@ -26,7 +28,7 @@ public interface EmployeeService {
 
     WorkShiftDto getEmployeeShift(Long employeeId);
 
-    void editStatus(Long id, Boolean status);
+    void editStatus(Long id, EmployeeStatus status);
 
     byte[] getQr(Long employeeId);
 

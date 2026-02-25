@@ -17,4 +17,20 @@ public interface EmpFingersRepository extends JpaRepository<EmpFingersEntity, Lo
             HandType hand
     );
 
+
+
+    boolean existsByEmployee_IdAndFingerIndexAndHand(Long employeeId, Integer fingerIndex, HandType hand);
+
+    Optional<EmpFingersEntity> findByIdAndEmployee_Id(Long id, Long employeeId);
+
+    List<EmpFingersEntity> findByEmployee_Id(Long employeeId);
+
+
+    boolean existsByEmployeeIdAndFingerIndexAndHand(Long employeeId, Integer fingerIndex, HandType hand);
+
+    long countByEmployeeId(Long employeeId);
+
+    void deleteByEmployeeIdAndFingerIndexAndHand(Long employeeId, Integer fingerIndex, HandType hand);
+
+    void deleteByEmployeeId(Long employeeId);
 }

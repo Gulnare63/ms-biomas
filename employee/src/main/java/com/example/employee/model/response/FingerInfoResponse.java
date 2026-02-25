@@ -9,6 +9,10 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class FingerInfoResponse {
+    private Long id;
+
     private Integer fingerIndex; // 1-10
     private HandType hand;
+    private boolean hasTemplate; // fingerprint doludur?
+
 }
