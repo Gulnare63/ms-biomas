@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<EmployeeEntity, Long>, JpaSpecificationExecutor<EmployeeEntity> {
     @Query("""
@@ -37,4 +38,6 @@ and (:name is null or lower(e.name) like lower(concat('%', :name, '%')))
             @Param("name") String name,
             @Param("structureId") Long structureId
     );
+
+    Optional<EmployeeEntity> findByPersonalCode(String personalCode);
 }

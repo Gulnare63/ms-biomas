@@ -1,15 +1,18 @@
 package com.example.employee.model.request;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
-public class EmployeeSaveRequest {
-
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
+public class EmployeeUpdatedEvent {
+    private Long employeeId;
     private String personalCode;
     private String name;
     private String surname;
     private String middleName;
     private Long structureId;
     private Long dutyId;
-
+    private String status;
+    private Boolean isActive;
 }

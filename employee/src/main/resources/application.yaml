@@ -1,3 +1,100 @@
+#server:
+#  port: 8082
+#
+#spring:
+#  application:
+#    name: employee
+#
+#  profiles:
+#    active: ${ACTIVE_PROFILE:local}
+#
+#  datasource:
+#    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+#    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+#    username: ${DB_USERNAME:postgres}
+#    password: ${DB_PASSWORD:4992663gulnaree}
+#
+#  jpa:
+#    database-platform: org.hibernate.dialect.PostgreSQLDialect
+#    show-sql: false
+#    open-in-view: false
+#    hibernate:
+#      ddl-auto: update
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        envers:
+#          audit_table_suffix: _AUD
+#          revision_field_name: REV
+#          revision_type_field_name: REVTYPE
+#          store_data_at_delete: true
+#
+#  rabbitmq:
+#    host: ${RABBIT_HOST:localhost}
+#    port: ${RABBIT_PORT:5672}
+#    username: ${RABBIT_USERNAME:guest}
+#    password: ${RABBIT_PASSWORD:guest}
+#    listener:
+#      simple:
+#        missing-queues-fatal: false
+#
+## ==============================
+## Rabbit Naming (Employee → Device)
+## ==============================
+#rabbitmq:
+#  queue:
+#    employee: EMPLOYEE_DEVICE_Q
+#    employee-dlq: EMPLOYEE_DEVICE_DLQ
+#
+## ==============================
+## Outbox Dispatcher Config
+## ==============================
+#outbox:
+#  dispatcher:
+#    delay-ms: 500000              # hər 2 saniyədə outbox yoxla
+#    batch-size: 50              # 1 dəfəlik neçə event götürülsün
+#    max-attempts: 10            # maksimum retry sayı
+#    max-backoff-seconds: 300    # maksimum 5 dəqiqə backoff
+#
+## ==============================
+## Device Service (Feign üçün)
+## ==============================
+#device:
+#  service:
+#    url: http://localhost:8081
+##server:
+##  port: 8082
+##
+##spring:
+##  application:
+##    name: employee
+##
+##  profiles:
+##    active: ${ACTIVE_PROFILE:local}
+##
+##  datasource:
+##    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+##    url: jdbc:postgresql://localhost:5432/postgres
+##    username: postgres
+##    password: 4992663gulnaree
+##
+##  jpa:
+##    database-platform: org.hibernate.dialect.PostgreSQLDialect
+##    show-sql: false
+##    open-in-view: false
+##    hibernate:
+##      ddl-auto: update
+##    properties:
+##      hibernate:
+##        envers:
+##          audit_table_suffix: _AUD
+##          revision_field_name: REV
+##          revision_type_field_name: REVTYPE
+##          store_data_at_delete: true
+##
+##device:
+##  service:
+##    url: http://localhost:8081
 server:
   port: 8082
 
@@ -10,9 +107,9 @@ spring:
 
   datasource:
     driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: 4992663gulnaree
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:4992663gulnaree}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -22,12 +119,53 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
+        format_sql: true
         envers:
           audit_table_suffix: _AUD
           revision_field_name: REV
           revision_type_field_name: REVTYPE
           store_data_at_delete: true
 
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USERNAME:guest}
+    password: ${RABBIT_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        missing-queues-fatal: false
+
+# ==============================
+# Rabbit Naming (Employee → Device)
+# ==============================
+rabbit:
+  employee:
+    exchange: EMPLOYEE_DEVICE_EXCHANGE
+    queue: EMPLOYEE_DEVICE_Q
+    routing-key-created: EMPLOYEE_CREATED_KEY
+    routing-key-updated: EMPLOYEE_UPDATED_KEY
+    dlq:
+      exchange: EMPLOYEE_DEVICE_DLQ_EXCHANGE
+      queue: EMPLOYEE_DEVICE_DLQ
+      routing-key: EMPLOYEE_DLQ_KEY
+
+# ==============================
+# Outbox Dispatcher Config
+# ==============================
+outbox:
+  dispatcher:
+    delay-ms: 50000
+    batch-size: 50
+    max-attempts: 10
+    max-backoff-seconds: 300
+    confirm-timeout-ms: 5000    # ← bunu əlavə et
+
+
+# ==============================
+# Device Service (Feign üçün)
+# ==============================
 device:
   service:
-    url: http://localhost:8081
+    url: ${DEVICE_SERVICE_URL:http://localhost:8081}

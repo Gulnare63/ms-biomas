@@ -78,7 +78,7 @@ public class ManualEmployeeMapper {
         if (request == null) return null;
 
         EmployeeEntity employee = new EmployeeEntity();
-        employee.setPersonalCode(nvl(request.getPersonalNumber()));
+        employee.setPersonalCode(nvl(request.getPersonalCode()));
         employee.setName(nvl(request.getName()));
         employee.setSurname(nvl(request.getSurname()));
         employee.setMiddleName(nvl(request.getMiddleName()));
@@ -92,7 +92,7 @@ public class ManualEmployeeMapper {
     public void updateEntity(EmployeeEntity employee, EmployeeSaveRequest request, StructureEntity structure, DutyEntity duty) {
         if (employee == null || request == null) return;
 
-        employee.setPersonalCode(request.getPersonalNumber() != null ? request.getPersonalNumber() : employee.getPersonalCode());
+        employee.setPersonalCode(request.getPersonalCode() != null ? request.getPersonalCode() : employee.getPersonalCode());
         employee.setName(request.getName() != null ? request.getName() : employee.getName());
         employee.setSurname(request.getSurname() != null ? request.getSurname() : employee.getSurname());
         employee.setMiddleName(request.getMiddleName() != null ? request.getMiddleName() : employee.getMiddleName());
